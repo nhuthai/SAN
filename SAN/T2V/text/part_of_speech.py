@@ -11,5 +11,3 @@ def get_tags_of_sentence(text):
         the_terms.append(token.orth_)
         #for more detail: token.dep_,token.head
     return list(zip(the_terms, the_pos))
-
-#print(list(get_tags_of_sentence('I image that I had this image.')))

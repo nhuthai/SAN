@@ -1,4 +1,4 @@
-from .SAN.T2V.text import sentence
+from .. import sentence
 
 class Testsentence:
     def test_init(self):

@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-pos_ = ['NOUN','VERB','ADJ','ADV']
+pos_ = ['PROPN','NOUN','VERB','ADJ','ADV','PHRASE','CCONJ']
 dep_ = []
 sen_ = ['.','?','...','!']
 
@@ -13,7 +13,7 @@ def isPoS(PoS: Union[str,dict]):
     if (type(PoS) is str and PoS in pos_) or PoS is None:
         return True
 
-    if len(PoS) > 0 and PoS['pos_'] in pos_:
+    if type(PoS) is dict and len(PoS) > 0 and PoS['pos_'] in pos_:
         if len(PoS) > 1:
             if PoS['dep_'] in dep_:
                 return True
@@ -51,4 +51,4 @@ def searchDatabase(word):
     :param word: word pattern.
     """
     # FIXME: search terms in database
-    return ''
+    return ['went away', 'hope you', 'love you', 'went away from', 'fuck you', 'made a new place', 'I will kill you']

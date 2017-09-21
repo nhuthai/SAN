@@ -1,5 +1,5 @@
 """
-SAN\T2V\text
+SAN.T2V.text
 ~~~
 An object text consisting of a text of sentences,
 each contains speech of sentence, other data to learn and terms,
@@ -10,37 +10,40 @@ each has information to learn and play.
 
 from typing import Optional, Union
 from .utils import isPoS, isToneLabel, isTypeSentence, searchDatabase, sen_
+from .part_of_speech import get_tags_of_sentence
+from .stop_word import checkStopWords
+from .higher_or_lower import isHigher
 
 class term:
     @property
     def PoS(self):
-        return self.PoS
+        return self._PoS
 
     @PoS.setter
     def PoS(self,value):
         assert isPoS(value)
-        if type(PoS) is str:
-            self.PoS['pos_'] = value
+        if type(value) is str:
+            self._PoS = {'pos_': value}
         else:
-            self.PoS = value
+            self._PoS = value
 
     @property
     def higher_or_lower(self):
-        return self.higher_or_lower
+        return self._higher_or_lower
 
     @higher_or_lower.setter
     def higher_or_lower(self,value):
         assert isToneLabel(value)
-        self.higher_or_lower = value
+        self._higher_or_lower = value
 
     @property
     def time_label(self):
-        return self.time_label
+        return self._time_label
 
     @time_label.setter
     def time_label(self,value):
-        assert value > 0
-        self.time_label = value
+        assert value >= 0
+        self._time_label = value
 
     def __init__(self, plain_term: str='', sound: Optional[str]=None,
                  isWord: bool=True, isStopWord: Optional[bool]=None,
@@ -63,15 +66,14 @@ class term:
 
         assert isPoS(PoS)
         assert isToneLabel(higher_or_lower)
-        assert time_label > 0
+        assert time_label >= 0
 
         self.plain_term = plain_term
         self.sound = sound if sound is not None else None
 
         self.isWord = isWord
-        if isWord:
-            self.isStopWord = isStopWord if isStopWord is not None else None
-            self.PoS = PoS if PoS is not None else None
+        self.isStopWord = isStopWord if isStopWord is not None else None
+        self.PoS = PoS if PoS is not None else None
 
         self.higher_or_lower = higher_or_lower
         self.time_label = time_label
@@ -112,6 +114,32 @@ class sentence:
             self.type = tmp
             self.plain_sentence=self.plain_sentence[:len(self.plain_sentence)-1]
 
+    def parsePoS(self, the_terms):
+        """
+        Part of speech -> different noun and verb pronounce
+
+        :param the_terms: the list of terms
+        """
+        the_pos = []
+        labeled_terms = get_tags_of_sentence(self.plain_sentence)
+        for index, a_term in enumerate(the_terms):
+            for a_lbl_term in labeled_terms:
+                if a_term == a_lbl_term[0]:
+                    new_term = term(plain_term=a_term, isWord=True,
+                                    isStopWord=checkStopWords(a_term),
+                                    PoS=a_lbl_term[1],
+                                    higher_or_lower=isHigher(index,the_terms,self.type),
+                                    time_label=0)
+                    the_pos.append(new_term)
+                    break
+            if len(the_pos) < index + 1:
+                new_term = term(plain_term=a_term, isWord=False,
+                                isStopWord=False, PoS='PHRASE',
+                                higher_or_lower=isHigher(index,the_terms,self.type),
+                                time_label=0)
+                the_pos.append(new_term)
+        return the_pos
+
     def breakSentenceIntoTerms(self):
         """
         Break terms as string into a list of term.
@@ -124,7 +152,6 @@ class sentence:
                 max_skip -= 1
                 continue
             patterns_ = searchDatabase(word)
-            #patterns_ = ['went away', 'hope you', 'love you', 'went away from', 'fuck you', 'made a new place', 'I will kill you']
             if len(patterns_) > 0:
                 max_tmp = word
                 for pattern_ in patterns_:
@@ -142,7 +169,8 @@ class sentence:
                 term_list.append(max_tmp)
             else:
                 term_list.append(word)
-        return term_list
+
+        return self.parsePoS(term_list)
 
 class text:
     def __init__(self, plain_text: str='', sentences: Optional[list]=None):
