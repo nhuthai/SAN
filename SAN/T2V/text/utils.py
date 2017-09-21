@@ -1,13 +1,15 @@
+from typing import Optional, Union
+
 pos_ = ['NOUN','VERB','ADJ','ADV']
 dep_ = []
 sen_ = ['.','?','...','!']
 
 def isPoS(PoS: Union[str,dict]):
     """
-        Check whether PoS is correct format
+    Check whether PoS is correct format
 
-        :param PoS: string is Part of Speech, dict is full information.
-        """
+    :param PoS: string is Part of Speech, dict is full information.
+    """
     if (type(PoS) is str and PoS in pos_) or PoS is None:
         return True
 
@@ -22,10 +24,10 @@ def isPoS(PoS: Union[str,dict]):
 
 def isToneLabel(Tone: Union[str,bool]):
     """
-        Check whether ToneLabel is correct format
+    Check whether ToneLabel is correct format
 
-        :param Tone: string is normal tone, bool is higher or lower.
-        """
+    :param Tone: string is normal tone, bool is higher or lower.
+    """
     if type(Tone) is bool or Tone is 'N':
         return True
 
@@ -33,11 +35,20 @@ def isToneLabel(Tone: Union[str,bool]):
 
 def isTypeSentence(typ: str):
     """
-        Check whether type of sentence is correct format
+    Check whether type of sentence is correct format
 
-        :param typ: symbol of type of sentence.
-        """
+    :param typ: symbol of type of sentence.
+    """
     if typ in sen_:
         return True
 
     return False
+
+def searchDatabase(word):
+    """
+    Search database and retrieve terms which match word pattern
+
+    :param word: word pattern.
+    """
+    # FIXME: search terms in database
+    return ''
