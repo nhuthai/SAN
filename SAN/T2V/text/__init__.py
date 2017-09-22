@@ -9,7 +9,7 @@ each has information to learn and play.
 """
 
 from typing import Optional, Union
-from .utils import isPoS, isToneLabel, isTypeSentence, searchDatabase, sen_
+from .utils import isPoS, isToneLabel, isTypeSentence, searchDatabase, sen_,saveDataBase
 from .part_of_speech import get_tags_of_sentence
 from .stop_word import checkStopWords
 from .higher_or_lower import isHigher
@@ -22,10 +22,7 @@ class term:
     @PoS.setter
     def PoS(self,value):
         assert isPoS(value)
-        if type(value) is str:
-            self._PoS = {'pos_': value}
-        else:
-            self._PoS = value
+        self._PoS = value
 
     @property
     def higher_or_lower(self):
@@ -44,6 +41,46 @@ class term:
     def time_label(self,value):
         assert value >= 0
         self._time_label = value
+
+    def convertJson(self):
+        """
+        Convert from term object to json object
+
+        Example:
+        {'went': {'link': None, 'higher_or_lower': 'N', 'PoS': 'VERB',
+                  'stopword': False},
+        'went away': {'link': None, 'higher_or_lower': False, 'PoS': 'PHRASE',
+                      'stopword': False},
+        'went away from': {'link': None, 'higher_or_lower': 'N', 'PoS': 'PHRASE',
+                           'stopword': False}}
+        """
+        tmp = {self.plain_term: {'sound': self.sound,
+               'higher_or_lower': self.higher_or_lower, 'PoS': self.PoS,
+               'stopword': self.isStopWord}}
+
+        return tmp
+
+    def convertFromJson(self, jsonObj):
+        """
+        Create a term after search in Database (use in
+        sentence.breakSentenceIntoTerms function) including sound link, stopword
+        ,higher_or_lower, PoS information
+        """
+        for key in jsonObj:
+            assert isPoS(jsonObj[key]['PoS'])
+            assert isToneLabel(jsonObj[key]['higher_or_lower'])
+
+            self.plain_term = key
+            self.sound = jsonObj[key]['sound']
+
+            self.isStopWord = jsonObj[key]['stopword']
+            self.PoS = jsonObj[key]['PoS']
+            self.isWord = False if self.PoS == 'PHRASE' else True
+
+            self.higher_or_lower = jsonObj[key]['higher_or_lower']
+            self.time_label = 0
+
+            break
 
     def __init__(self, plain_term: str='', sound: Optional[str]=None,
                  isWord: bool=True, isStopWord: Optional[bool]=None,
@@ -109,36 +146,25 @@ class sentence:
         """
         Remove the ending symbol such as '.', '?', '!' , '...', .etc.
         """
-        tmp = self.plain_sentence[len(self.plain_sentence) - 1]
+        tmp = self.plain_sentence[-1]
         if isTypeSentence(tmp):
             self.type = tmp
-            self.plain_sentence=self.plain_sentence[:len(self.plain_sentence)-1]
+            self.plain_sentence=self.plain_sentence[:-1]
 
     def parsePoS(self, the_terms):
         """
         Part of speech -> different noun and verb pronounce
 
-        :param the_terms: the list of terms
+        :param the_terms: the list of term objects
         """
-        the_pos = []
         labeled_terms = get_tags_of_sentence(self.plain_sentence)
-        for index, a_term in enumerate(the_terms):
+        for a_term in the_terms:
             for a_lbl_term in labeled_terms:
-                if a_term == a_lbl_term[0]:
-                    new_term = term(plain_term=a_term, isWord=True,
-                                    isStopWord=checkStopWords(a_term),
-                                    PoS=a_lbl_term[1],
-                                    higher_or_lower=isHigher(index,the_terms,self.type),
-                                    time_label=0)
-                    the_pos.append(new_term)
+                if a_term.plain_term == a_lbl_term[0]:
+                    a_term.PoS = a_lbl_term[1]
                     break
-            if len(the_pos) < index + 1:
-                new_term = term(plain_term=a_term, isWord=False,
-                                isStopWord=False, PoS='PHRASE',
-                                higher_or_lower=isHigher(index,the_terms,self.type),
-                                time_label=0)
-                the_pos.append(new_term)
-        return the_pos
+
+        return the_terms
 
     def breakSentenceIntoTerms(self):
         """
@@ -158,17 +184,28 @@ class sentence:
                     tmp = word
                     skip = 0
                     for next in range(index + 1, len(word_list)):
+                        # FIXME: in case of Levenshtein distance
                         if tmp + ' ' + word_list[next] in pattern_:
                             tmp += ' ' + word_list[next]
                             skip += 1
                         else:
                             break
-                    if len(tmp) > len(max_tmp):
+                    # FIXME: in case of Levenshtein distance
+                    tmp = pattern_ if tmp == pattern_ else word
+                    tmp_tone = isHigher(tmp.split()[-1],word_list,self.type)
+                    if len(tmp) > len(max_tmp) and \
+                       patterns_[pattern_]['higher_or_lower'] == tmp_tone:
                         max_tmp = tmp
                         max_skip = skip
-                term_list.append(max_tmp)
+                new_word = term()
+                new_word.convertFromJson({max_tmp: patterns_[max_tmp]})
+                term_list.append(new_word)
             else:
-                term_list.append(word)
+                new_word = term(plain_term=word, isWord=True,
+                                isStopWord=checkStopWords(word),
+                                higher_or_lower=isHigher(word,word_list,self.type),
+                                time_label=0)
+                term_list.append(new_word)
 
         return self.parsePoS(term_list)
 
@@ -191,12 +228,12 @@ class text:
         def breakEachSymbol(my_str: str, symbols: list):
             chunks = []
             if len(symbols) > 1:
-                the_symbol = symbols[len(symbols) - 1]
+                the_symbol = symbols[-1]
                 the_list = my_str.split(the_symbol)
                 for index, aChunk in enumerate(the_list):
                     if index < len(the_list) - 1:
                         aChunk += the_symbol
-                    chunks.extend(breakEachSymbol(aChunk, symbols[:len(symbols) - 1]))
+                    chunks.extend(breakEachSymbol(aChunk, symbols[:-1]))
             else:
                 for aPlain in my_str.split(symbols[0]):
                     if len(aPlain) > 0:
