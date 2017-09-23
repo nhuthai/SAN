@@ -1,3 +1,11 @@
+"""
+SAN.T2V.text.utils
+~~~
+Useful functions for text object
+:copyright: 2017 by Nhut Hai Huynh.
+:license: MIT, see LICENSE for more details.
+"""
+
 import json
 import os
 from typing import Optional, Union
@@ -14,7 +22,6 @@ def isPoS(PoS: Union[str,dict]):
 
     :param PoS: string is Part of Speech, dict is full information.
     """
-    print(PoS)
     if (type(PoS) is str and PoS in pos_) or PoS is None:
         return True
 

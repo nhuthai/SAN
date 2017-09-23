@@ -1,3 +1,11 @@
+"""
+SAN.T2V.text.part_of_speech
+~~~
+Ultilize SpaCy package to parse part of speech
+:copyright: 2017 by Nhut Hai Huynh.
+:license: MIT, see LICENSE for more details.
+"""
+
 # Install: pip install spacy && python -m spacy download en
 from spacy.en import English
 
