@@ -11,6 +11,7 @@ import os
 from typing import Optional, Union
 from itertools import compress
 from pathlib import *
+from .levenshtein_distance import nearlyContains
 
 pos_ = ['PROPN','NOUN','VERB','ADJ','ADV','PHRASE','CCONJ','DET']
 dep_ = []
@@ -74,8 +75,7 @@ def searchDatabase(word):
         """
         whether _search contains or nearly contains (used word distance) word
         """
-        ### FIXME: Levenshtein distance
-        return word in _search
+        return nearlyContains(word, _search)
 
     _compare = list(map(doesContain, keys_list))
     #_id = [i for i, v in _compare if v]

@@ -9,6 +9,8 @@ Method 2: Check the type of the sentence and use audio coding to modify tone.
 :license: MIT, see LICENSE for more details.
 """
 from typing import Union
+from functools import reduce
+from .levenshtein_distance import nearlyContains, nearlyEquals
 
 def isHigher(term_or_index: Union[str, int], sentence: list, typ: str):
     """
@@ -19,9 +21,10 @@ def isHigher(term_or_index: Union[str, int], sentence: list, typ: str):
     :param typ: the type of the sentence
     """
     if type(term_or_index) is str:
-        assert term_or_index in sentence
+        plain_sentence = reduce(lambda x,y: x + " " + y, sentence)
+        assert nearlyContains(term_or_index, plain_sentence)
         for index, aTerm in enumerate(sentence):
-            if aTerm == term_or_index and index < len(sentence) - 1:
+            if nearlyEquals(aTerm, term_or_index) and index < len(sentence) - 1:
                 return 'N'
 
     if type(term_or_index) is int:

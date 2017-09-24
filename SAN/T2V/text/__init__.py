@@ -13,6 +13,7 @@ from .utils import isPoS, isToneLabel, isTypeSentence, searchDatabase, sen_,save
 from .part_of_speech import get_tags_of_sentence
 from .stop_word import checkStopWords
 from .higher_or_lower import isHigher
+from .levenshtein_distance import nearlyEquals, nearlyContains
 
 class term:
     @property
@@ -184,14 +185,13 @@ class sentence:
                     tmp = word
                     skip = 0
                     for next in range(index + 1, len(word_list)):
-                        # FIXME: in case of Levenshtein distance
-                        if tmp + ' ' + word_list[next] in pattern_:
+                        if nearlyContains(tmp + ' ' + word_list[next], pattern_):
                             tmp += ' ' + word_list[next]
                             skip += 1
                         else:
                             break
-                    # FIXME: in case of Levenshtein distance
-                    tmp = pattern_ if tmp == pattern_ else word
+
+                    tmp = pattern_ if nearlyEquals(tmp, pattern_) else word
                     tmp_tone = isHigher(tmp.split()[-1],word_list,self.type)
                     if len(tmp) > len(max_tmp) and \
                        patterns_[pattern_]['higher_or_lower'] == tmp_tone:
